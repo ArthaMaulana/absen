@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scanner QR Code</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header {
+      text-align: center;
+      padding: 16px;
+      background: #4CAF50;
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    .login-form {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 16px auto;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      background: #f8f8f8;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #4CAF50;
+      background: white;
+      box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: #4CAF50;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:active {
+      background: #3d8b40;
+    }
+
+    #scanner-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: black;
+      margin: -16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #reader {
+      flex: 1;
+      min-height: 0;
+      background: black;
+    }
+
+    #result {
+      position: absolute;
+      bottom: 80px;
+      left: 16px;
+      right: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      z-index: 100;
+    }
+
+    .button-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 16px;
+      background: white;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    }
+
+    .button-container button {
+      margin: 0;
+      padding: 12px;
+    }
+
+    .success {
+      background: rgba(212, 237, 218, 0.9);
+      color: #155724;
+    }
+
+    .error {
+      background: rgba(248, 215, 218, 0.9);
+      color: #721c24;
+    }
+
+    #adminPanel {
+      display: none;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .loading {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      color: white;
+    }
+
+    .loading.show {
+      display: flex;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .alert.show {
+      display: block;
+    }
+
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .confirmation-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      padding: 20px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .confirmation-content {
+      background: white;
+      padding: 32px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      animation: modalSlideUp 0.3s ease-out;
+    }
+
+    @keyframes modalSlideUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .success-icon {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 24px;
+      position: relative;
+    }
+
+    .success-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .confirmation-title {
+      font-size: 28px;
+      font-weight: 600;
+      color: #4CAF50;
+      margin-bottom: 8px;
+    }
+
+    .confirmation-subtitle {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .visitor-details {
+      background: #f8f9fa;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+
+    .detail-item {
+      padding: 10px 0;
+    }
+
+    .detail-item:not(:last-child) {
+      border-bottom: 1px solid #eee;
+    }
+
+    .detail-label {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .detail-value {
+      font-size: 16px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .btn-confirm {
+      background: #4CAF50;
+      color: white;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      width: 100%;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel {
+      background: #ff4444;
+      color: white;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      width: 100%;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-confirm:hover {
+      background: #43a047;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+    }
+
+    .btn-cancel:hover {
+      background: #cc0000;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 68, 68, 0.2);
+    }
+
+    .btn-confirm:active, .btn-cancel:active {
+      transform: translateY(0);
+    }
+
+    .scan-status {
+      display: none;
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 1000;
+    }
+
+    .scan-status.success {
+      background: rgba(46, 204, 113, 0.9);
+      color: white;
+    }
+
+    .scan-status.error {
+      background: rgba(231, 76, 60, 0.9);
+      color: white;
+    }
+
+    @media (max-width: 480px) {
+      .header {
+        padding: 12px;
+        font-size: 16px;
+      }
+
+      .content {
+        padding: 12px;
+      }
+
+      .login-form {
+        margin: 8px auto;
+        padding: 16px;
+      }
+
+      input {
+        font-size: 14px;
+      }
+
+      button {
+        font-size: 14px;
+        padding: 12px;
+      }
+
+      #scanner-container {
+        margin: -12px;
+      }
+
+      .button-container {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading" class="loading">
+    <div>Mohon tunggu...</div>
+  </div>
+
+  <div class="header">Scanner QR Code</div>
+  
+  <div class="container">
+    <div class="content">
+      <div id="loginForm" class="login-form">
+        <div id="loginAlert" class="alert"></div>
+        <div class="input-group">
+          <label for="username">Username Admin</label>
+          <input type="text" id="username" placeholder="Masukkan username" autocomplete="off">
+        </div>
+        <div class="input-group">
+          <label for="password">Password Admin</label>
+          <input type="password" id="password" placeholder="Masukkan password">
+        </div>
+        <button id="loginButton" onclick="login()">Login</button>
+      </div>
+
+      <div id="adminPanel">
+        <div id="scanner-container">
+          <div id="reader"></div>
+          <div id="result"></div>
+        </div>
+        <div class="button-container">
+          <button onclick="stopScanner()">STOP</button>
+          <button onclick="startScanner()">START</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmationModal" class="confirmation-modal">
+    <div class="confirmation-content">
+      <div class="success-icon">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIiB4PSIxNSIgeT0iMTUiIGZpbGw9IiNGRkMxMDciIHJ4PSIxMCIvPgogIDxwYXRoIGQ9Ik0zMCA2MEw1MCA4MEw5MCA0MCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cGF0aCBkPSJNODUgMjVDOTIuNSAyNSA5NSAzMCA5NSAzNUw4NSA0NU03NSAyNUM2Ny41IDI1IDY1IDMwIDY1IDM1TDc1IDQ1IiBzdHJva2U9IiM0Q0FGNTAiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLXxpbmVjYXA9InJvdW5kIi8+Cjwvc3ZnPg==" alt="Success">
+      </div>
+      <div class="confirmation-title">Data Ditemukan!</div>
+      <div class="confirmation-subtitle">Mohon periksa data pengunjung berikut</div>
+      
+      <div class="visitor-details">
+        <div class="detail-item">
+          <div class="detail-label">Nama</div>
+          <div id="visitorName" class="detail-value">-</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Email</div>
+          <div id="visitorEmail" class="detail-value">-</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">No. Telepon</div>
+          <div id="visitorPhone" class="detail-value">-</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Instansi/Umum</div>
+          <div id="visitorInstansi" class="detail-value">-</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Asal Daerah</div>
+          <div id="visitorDaerah" class="detail-value">-</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Waktu Pendaftaran</div>
+          <div id="registrationTime" class="detail-value">-</div>
+        </div>
+      </div>
+
+      <button class="btn-confirm" onclick="confirmAttendance()">KONFIRMASI KEHADIRAN</button>
+      <button class="btn-cancel" onclick="cancelConfirmation()">BATAL</button>
+    </div>
+  </div>
+
+  <div id="errorModal" class="confirmation-modal">
+    <div class="confirmation-content">
+      <div class="success-icon">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIiB4PSIxNSIgeT0iMTUiIGZpbGw9IiNmZjQ0NDQiIHJ4PSIxMCIvPgogIDxwYXRoIGQ9Ik00MCA0MEw4MCA4ME04MCA0MEw0MCA4MCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+" alt="Error">
+      </div>
+      <div class="confirmation-title" style="color: #ff4444;">Oh tidak!</div>
+      <div class="confirmation-subtitle" id="errorMessage">Terjadi kesalahan, silakan coba lagi</div>
+      <button class="btn-confirm" onclick="document.getElementById('errorModal').style.display='none'">COBA LAGI</button>
+    </div>
+  </div>
+
+  <div id="scanStatus" class="scan-status"></div>
+
+  <script>
+    let html5QrcodeScanner = null;
+    let currentVisitorData = null;
+    let isScanning = false;
+
+    // Panggil setupRequiredColumns saat halaman dimuat
+    window.onload = function() {
+      google.script.run
+        .withSuccessHandler(function(response) {
+          console.log('Setup kolom berhasil');
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error setup kolom:', error);
+        })
+        .setupRequiredColumns();
+    };
+
+    function showLoading() {
+      document.getElementById('loading').classList.add('show');
+    }
+
+    function hideLoading() {
+      document.getElementById('loading').classList.remove('show');
+    }
+
+    function showAlert(message, type) {
+      const alert = document.getElementById('loginAlert');
+      alert.textContent = message;
+      alert.className = 'alert show alert-' + type;
+    }
+
+    function hideAlert() {
+      const alert = document.getElementById('loginAlert');
+      alert.className = 'alert';
+    }
+
+    function login() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const loginButton = document.getElementById('loginButton');
+
+      if (!username || !password) {
+        showAlert('Username dan password harus diisi', 'error');
+        return;
+      }
+
+      loginButton.disabled = true;
+      showLoading();
+      hideAlert();
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          loginButton.disabled = false;
+
+          if (response.success) {
+            showAlert('Login berhasil', 'success');
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            startScanner();
+          } else {
+            showAlert('Login gagal! ' + response.message, 'error');
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          loginButton.disabled = false;
+          showAlert('Terjadi kesalahan: ' + error.message, 'error');
+        })
+        .verifyPetugas(username, password);
+    }
+
+    async function startScanner() {
+      try {
+        if (html5QrcodeScanner) {
+          await stopScanner();
+        }
+
+        const config = {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+          formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
+        };
+
+        html5QrcodeScanner = new Html5Qrcode("reader");
+        isScanning = true;
+
+        await html5QrcodeScanner.start(
+          { facingMode: "environment" },
+          config,
+          onQRCodeSuccess,
+          onQRCodeError
+        );
+
+        console.log('Scanner started successfully');
+      } catch (err) {
+        console.error('Scanner Error:', err);
+        showErrorModal('Gagal memulai scanner: ' + err.message);
+        // Reset scanner state
+        html5QrcodeScanner = null;
+        isScanning = false;
+      }
+    }
+
+    async function stopScanner() {
+      try {
+        isScanning = false;
+        if (html5QrcodeScanner) {
+          await html5QrcodeScanner.stop();
+          await html5QrcodeScanner.clear();
+          html5QrcodeScanner = null;
+        }
+      } catch (err) {
+        console.error('Error stopping scanner:', err);
+        // Reset scanner state even if there's an error
+        html5QrcodeScanner = null;
+      }
+    }
+
+    async function resumeScanner() {
+      try {
+        if (html5QrcodeScanner) {
+          await stopScanner();
+        }
+        setTimeout(() => {
+          startScanner();
+        }, 1000);
+      } catch (error) {
+        console.error('Error resuming scanner:', error);
+        showErrorModal('Gagal memulai ulang scanner');
+      }
+    }
+
+    function onQRCodeError(errorMessage) {
+      // Ignore error messages during normal scanning
+      console.debug('QR Code scan error:', errorMessage);
+    }
+
+    async function onQRCodeSuccess(decodedText) {
+      if (!isScanning) return;
+      
+      try {
+        console.log('QR Code detected:', decodedText);
+        
+        // Hentikan scanner sementara
+        isScanning = false;
+        if (html5QrcodeScanner) {
+          await html5QrcodeScanner.pause();
+        }
+
+        let qrData;
+        try {
+          // Coba parse sebagai JSON
+          qrData = JSON.parse(decodedText);
+        } catch (parseError) {
+          // Jika bukan JSON, coba parse sebagai URL
+          try {
+            const url = new URL(decodedText);
+            const params = new URLSearchParams(url.search);
+            
+            // Ekstrak data dari parameter URL
+            qrData = {
+              id: params.get('id'),
+              qrId: params.get('id'), // Tambahkan qrId untuk kompatibilitas
+              nama: params.get('nama'),
+              email: params.get('email'),
+              noTelp: params.get('noTelp'),
+              instansi: params.get('instansi'),
+              asalDaerah: params.get('asalDaerah'),
+              timestamp: params.get('timestamp')
+            };
+            
+            console.log('Extracted URL params:', qrData);
+          } catch (urlError) {
+            throw new Error('Format QR Code tidak valid (bukan JSON atau URL)');
+          }
+        }
+        
+        if (!qrData || (!qrData.id && !qrData.qrId)) {
+          throw new Error('QR Code tidak memiliki ID yang valid');
+        }
+
+        showLoading();
+        showScanStatus('QR Code terdeteksi, mengambil data...', 'success');
+
+        // Jika data lengkap dari URL, tampilkan langsung
+        if (qrData.nama && qrData.email && qrData.noTelp && qrData.instansi && qrData.asalDaerah) {
+          showConfirmationModal(qrData);
+          hideLoading();
+        } else {
+          // Jika tidak lengkap, ambil data dari server
+          google.script.run
+            .withSuccessHandler(handleVisitorDataSuccess)
+            .withFailureHandler(handleVisitorDataError)
+            .getVisitorData(qrData);
+        }
+
+      } catch (error) {
+        console.error('QR Code processing error:', error);
+        hideLoading();
+        showErrorModal(error.message || 'QR Code tidak valid');
+        resumeScanner();
+      }
+    }
+
+    function handleVisitorDataSuccess(response) {
+      hideLoading();
+      console.log('Server response:', response);
+
+      if (response && response.success && response.data) {
+        showConfirmationModal(response.data);
+      } else {
+        const errorMsg = response ? response.message : 'Gagal memproses QR Code';
+        console.error('Server Error:', errorMsg, response?.debug || {});
+        showErrorModal(errorMsg);
+        resumeScanner();
+      }
+    }
+
+    function handleVisitorDataError(error) {
+      hideLoading();
+      console.error('Server Error:', error);
+      showErrorModal('Error sistem: ' + error.toString());
+      resumeScanner();
+    }
+
+    function showErrorModal(message) {
+      // Sembunyikan modal konfirmasi jika ada
+      document.getElementById('confirmationModal').style.display = 'none';
+      
+      document.getElementById('errorMessage').textContent = message;
+      const errorModal = document.getElementById('errorModal');
+      errorModal.style.display = 'flex';
+      
+      // Tunggu sebentar sebelum menyembunyikan modal dan memulai ulang scanner
+      setTimeout(() => {
+        errorModal.style.display = 'none';
+        resumeScanner();
+      }, 2000);
+    }
+
+    function confirmAttendance() {
+      if (!currentVisitorData) {
+        showScanStatus('Data pengunjung tidak valid', 'error');
+        resumeScanner();
+        return;
+      }
+
+      showLoading();
+      console.log('Recording attendance for:', currentVisitorData);
+      
+      // Pastikan ada qrId untuk pencarian
+      if (!currentVisitorData.qrId && currentVisitorData.id) {
+        currentVisitorData.qrId = currentVisitorData.id;
+      }
+
+      // Tambahkan status dan waktu kehadiran
+      currentVisitorData.status = 'Hadir';
+      currentVisitorData.waktuHadir = new Date().toLocaleString('id-ID');
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          console.log('recordAttendance response:', response);
+          
+          if (response && response.success) {
+            showScanStatus('Kehadiran berhasil dicatat', 'success');
+            const modal = document.getElementById('confirmationModal');
+            modal.style.display = 'none';
+            currentVisitorData = null;
+            resumeScanner();
+          } else {
+            const errorMsg = response ? response.message : 'Gagal mencatat kehadiran';
+            console.error('Record attendance error:', errorMsg, response?.debug || {});
+            showErrorModal(errorMsg);
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          console.error('Record attendance error:', error);
+          showErrorModal('Error sistem: ' + error.toString());
+        })
+        .recordAttendance(currentVisitorData);
+    }
+
+    function showConfirmationModal(visitorData) {
+      if (!visitorData) {
+        console.error('No visitor data provided to showConfirmationModal');
+        showErrorModal('Data pengunjung tidak ditemukan');
+        return;
+      }
+    
+      console.log('Showing confirmation modal with data:', visitorData);
+      currentVisitorData = visitorData;
+      
+      try {
+        // Sembunyikan modal error jika ada
+        document.getElementById('errorModal').style.display = 'none';
+        
+        // Update data pengunjung di modal
+        document.getElementById('visitorName').textContent = visitorData.nama || '-';
+        document.getElementById('visitorEmail').textContent = visitorData.email || '-';
+        document.getElementById('visitorPhone').textContent = visitorData.noTelp || '-';
+        document.getElementById('visitorInstansi').textContent = visitorData.instansi || '-';
+        document.getElementById('visitorDaerah').textContent = visitorData.asalDaerah || '-';
+        
+        const timestamp = visitorData.timestamp;
+        let formattedTime = '-';
+        if (timestamp) {
+          try {
+            const date = new Date(timestamp);
+            if (!isNaN(date)) {
+              formattedTime = date.toLocaleString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              });
+            } else {
+              formattedTime = timestamp;
+            }
+          } catch (e) {
+            console.error('Error formatting timestamp:', e);
+            formattedTime = timestamp;
+          }
+        }
+        document.getElementById('registrationTime').textContent = formattedTime;
+        
+        // Tampilkan modal
+        const modal = document.getElementById('confirmationModal');
+        modal.style.display = 'flex';
+        
+        console.log('Modal displayed successfully');
+      } catch (error) {
+        console.error('Error in showConfirmationModal:', error);
+        showErrorModal('Gagal menampilkan data pengunjung');
+        resumeScanner();
+      }
+    }
+
+    function cancelConfirmation() {
+      console.log('cancelConfirmation called');
+      const modal = document.getElementById('confirmationModal');
+      modal.style.display = 'none';
+      currentVisitorData = null;
+      resumeScanner();
+    }
+
+    function showScanStatus(message, type) {
+      const statusElement = document.getElementById('scanStatus');
+      statusElement.textContent = message;
+      statusElement.className = 'scan-status ' + type;
+      statusElement.style.display = 'block';
+      
+      // Sembunyikan status setelah 3 detik
+      setTimeout(() => {
+        statusElement.style.display = 'none';
+      }, 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+
+      const passwordInput = document.getElementById('password');
+      passwordInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          login();
+        }
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    });
+  </script>
+</body>
+</html>
